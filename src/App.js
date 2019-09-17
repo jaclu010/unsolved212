@@ -70,7 +70,7 @@ const renderResult = prediction => {
   return (
     <div>
       <h2 style={{ margin: '1em' }}>In 30 minutes ...</h2>
-      <p style={{ margin: '1em', fontSize: '5em' }}>{result}</p>
+      <p style={{ margin: '1em', fontSize: '3em' }}>{result}</p>
       <h2 style={{ margin: '1em' }}>with 0.5% certainty</h2>
     </div>
   );
