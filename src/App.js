@@ -60,7 +60,7 @@ const renderResult = prediction => {
   } else if (prediction < 0.5) {
     result = 'There may be a drop or two'
   } else if (prediction < 1) {
-    result = 'There will be light raing';
+    result = 'There will be light rain';
   } else if (prediction < 4) {
     result = 'Bring an umbrella';
   } else {
