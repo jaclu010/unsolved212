@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Box, Grommet, TextInput, Button } from 'grommet';
+import { Input, Button, Loader } from 'semantic-ui-react';
 import axios from 'axios';
 import moment from 'moment'
 import haversine from 'haversine';
@@ -8,43 +8,9 @@ const TOKEN = process.env.TOKEN;
 const MINUTE_DELTA = '15';
 const DISTANCE = 10000;
 
-const theme = {
-  global: {
-    font: {
-      family: 'Roboto',
-      size: '14px',
-      height: '20px',
-    },
-  },
-};
-
-const AppBar = (props) => (
-  <Box
-    tag='header'
-    direction='row'
-    align='center'
-    justify='between'
-    background='brand'
-    pad={{ left: 'medium', right: 'small', vertical: 'small' }}
-    elevation='medium'
-    style={{ zIndex: '1' }}
-    {...props}
-  />
-);
-
-const NumberInput = (props) => {
-  return (
-    <TextInput
-      placeholder="type here"
-      value={props.value}
-      onChange={props.handler}
-    />
-  );
-}
-
 const toDateFormat = dateString => `${dateString.slice(0, 4)}-${dateString.slice(4, 6)}-${dateString.slice(6, 8)}:${dateString.slice(8, 10)}:${dateString.slice(10, 12)}`;
 
-async function queryForWeather() {
+async function queryForWeather(userPosition) {
   const { data: mostRecentData } = await axios({
     method: 'get',
     url: `https://demo-apim.westeurope.cloudapp.azure.com/api_secure/PrecipitationAPI/3.0.0/weather/precipitation/availability?location=stockholm`,
@@ -68,15 +34,10 @@ async function queryForWeather() {
 
   const toAnalyse = await Promise.all(toAnalysePromises);
 
-  const averages = toAnalyse.map(({ data }) => {
-    const userLocation = {
-      latitude: 59.3293,
-      longitude: 18.0686,
-    }
-    
+  const averages = toAnalyse.map(({ data }) => {    
     const points = data.points.filter(({ geometry }) => {
       const [longitude, latitude] = geometry.coordinates;
-      const distance = haversine(userLocation, { latitude, longitude }, { unit: 'meter' });
+      const distance = haversine(userPosition, { latitude, longitude }, { unit: 'meter' });
 
       return distance < DISTANCE;
     });
@@ -99,7 +60,7 @@ const renderResult = prediction => {
   } else if (prediction < 0.5) {
     result = 'There may be a drop or two'
   } else if (prediction < 1) {
-    result = 'Light raing';
+    result = 'There will be light raing';
   } else if (prediction < 4) {
     result = 'Bring an umbrella';
   } else {
@@ -107,40 +68,75 @@ const renderResult = prediction => {
   }
 
   return (
-    <>
-      <h2>In 30 minutes ...</h2>
-      <p>
-        {result}
-      </p>
-      <h2>with 0.5% certainty</h2>
-    </>
+    <div>
+      <h2 style={{ margin: '1em' }}>In 30 minutes ...</h2>
+      <p style={{ margin: '1em', fontSize: '5em' }}>{result}</p>
+      <h2 style={{ margin: '1em' }}>with 0.5% certainty</h2>
+    </div>
   );
 };
 
 function App() {
-  const [lat, setLat] = useState('');
-  const [lng, setLng] = useState('');
+  const [latitude, setLat] = useState('59.3293');
+  const [longitude, setLng] = useState('18.0686');
   const [descision, setDescision] = useState(null);
+  const [loading, setLoading] = useState(false);
 
   return (
-    <Grommet theme={theme}>
-      <AppBar>
-         Hello
-      </AppBar>
-      <NumberInput
-        value={lat}
-        handler={({ target }) => setLat(target.value)}
-      />
-      <NumberInput
-        value={lng}
-        handler={({ target }) => setLng(target.value)}
-      />
-      <Button
-        onClick={() => queryForWeather().then(setDescision)}
-        label="Get prediction"
-      />
+    <div 
+      style={{
+        backgroundColor: '#282c34',
+        minHeight: '100vh',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        fontSize: 'calc(10px + 2vmin)',
+        color: 'white',
+        textAlign: 'center'
+      }}
+    >
+      {
+        loading && <Loader active inline size="massive" />
+      }
+      { 
+        !descision && !loading && (
+          <Input
+            style={{ margin: '1em' }}
+            inverted
+            placeholder="Latitude"
+            value={latitude}
+            onChange={({ target }) => setLat(target.value)}
+          />
+        )
+      }
+      { 
+        !descision && !loading && (
+          <Input
+            style={{ margin: '1em' }}
+            inverted
+            placeholder="Longitude"
+            value={longitude}
+            onChange={({ target }) => setLng(target.value)}
+          />
+        )
+      }
+      {
+        !descision && !loading && (
+          <Button
+            style={{ margin: '1em' }}
+            inverted
+            disabled={!latitude || !longitude}
+            onClick={() => {
+              setLoading(true)
+              queryForWeather({ latitude, longitude }).then(setDescision).then(() => setLoading(false))
+            }}
+            content="Get prediction"
+          />
+        )
+      }
       {(descision || descision === 0) && renderResult(descision)}
-    </Grommet>
+    </div>
   );
 }
 
