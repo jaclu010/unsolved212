@@ -1,3 +1,5 @@
+# NOTE: Archived
+
 # 30 minute rain prediction
 The app uses real weather data to predict wether there will be raining in 30 minutes.
 Input your latitude and longitude coordinates, and a cause of action will be presented to you!
